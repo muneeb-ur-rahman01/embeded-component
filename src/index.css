@@ -1,0 +1,201 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --float-scale: 1.05;
+  --float-height: -10px;
+  --float-depth: 20px;
+  --blur-amount: 8px;
+  --cube-rotate: 90deg;
+  --cube-perspective: 2000px;
+}
+
+@keyframes noise {
+  0% { background-position: 0 0; }
+  100% { background-position: 100% 100%; }
+}
+
+@keyframes floatAndFade {
+  0% { 
+    opacity: 0;
+    filter: blur(var(--blur-amount));
+    transform: scale(1) translateZ(0) rotateY(0deg);
+    box-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  }
+  50% { 
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(var(--float-scale)) translateY(var(--float-height)) translateZ(var(--float-depth));
+    box-shadow: 
+      0 20px 25px rgba(0, 0, 0, 0.3),
+      0 0 30px rgba(255, 255, 255, 0.15);
+  }
+  100% { 
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1) translateZ(0) rotateY(0deg);
+    box-shadow: 
+      0 0 0 rgba(0, 0, 0, 0.2),
+      0 0 20px rgba(255, 255, 255, 0.15);
+  }
+}
+
+@keyframes flipRight {
+  0% {
+    transform: perspective(var(--cube-perspective)) rotateY(0deg);
+    filter: blur(0);
+  }
+  100% {
+    transform: perspective(var(--cube-perspective)) rotateY(var(--cube-rotate));
+    filter: blur(var(--blur-amount));
+  }
+}
+
+@keyframes flipLeft {
+  0% {
+    transform: perspective(var(--cube-perspective)) rotateY(0deg);
+    filter: blur(0);
+  }
+  100% {
+    transform: perspective(var(--cube-perspective)) rotateY(calc(var(--cube-rotate) * -1));
+    filter: blur(var(--blur-amount));
+  }
+}
+
+@keyframes flipRightIn {
+  0% {
+    transform: perspective(var(--cube-perspective)) rotateY(calc(var(--cube-rotate) * -1));
+    filter: blur(var(--blur-amount));
+  }
+  100% {
+    transform: perspective(var(--cube-perspective)) rotateY(0deg);
+    filter: blur(0);
+  }
+}
+
+@keyframes flipLeftIn {
+  0% {
+    transform: perspective(var(--cube-perspective)) rotateY(var(--cube-rotate));
+    filter: blur(var(--blur-amount));
+  }
+  100% {
+    transform: perspective(var(--cube-perspective)) rotateY(0deg);
+    filter: blur(0);
+  }
+}
+
+@keyframes slideRight {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slideLeft {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slideRightIn {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideLeftIn {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@layer components {
+  .noise-overlay {
+    position: absolute;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    opacity: 0;
+    mix-blend-mode: overlay;
+    pointer-events: none;
+    z-index: 30;
+    transition: opacity 600ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .mask-visible {
+    transform-style: preserve-3d;
+    animation: floatAndFade 1200ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    backface-visibility: hidden;
+    will-change: transform, opacity, filter;
+    transform-origin: center center;
+  }
+
+  .mask-hidden {
+    opacity: 0;
+    transform: scale(1) translateZ(0);
+    transition: all 800ms cubic-bezier(0.4, 0, 0.2, 1);
+    transform-style: preserve-3d;
+    filter: blur(var(--blur-amount));
+    backface-visibility: hidden;
+    will-change: transform, opacity, filter;
+    transform-origin: center center;
+  }
+
+  .flip-right-out {
+    animation: flipRight 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    transform-origin: center right;
+  }
+
+  .flip-left-out {
+    animation: flipLeft 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    transform-origin: center left;
+  }
+
+  .flip-right-in {
+    animation: flipRightIn 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    transform-origin: center left;
+  }
+
+  .flip-left-in {
+    animation: flipLeftIn 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    transform-origin: center right;
+  }
+
+  .slide-right-out {
+    animation: slideRight 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .slide-left-out {
+    animation: slideLeft 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .slide-right-in {
+    animation: slideRightIn 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+
+  .slide-left-in {
+    animation: slideLeftIn 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  }
+}
+
+div:hover .noise-overlay {
+  opacity: 0.08;
+}
+
+[style*="background-image"] {
+  transition: all 800ms cubic-bezier(0.4, 0, 0.2, 1);
+  backface-visibility: hidden;
+  will-change: transform, filter, background-position;
+  transform-style: preserve-3d;
+}
