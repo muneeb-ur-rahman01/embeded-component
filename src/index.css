@@ -199,3 +199,7 @@ div:hover .noise-overlay {
   will-change: transform, filter, background-position;
   transform-style: preserve-3d;
 }
+
+.font-space-grotesk {
+  font-family: 'Space Grotesk', sans-serif;
+}
