@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Settings2, X, Upload, ChevronRight } from 'lucide-react';
+import { Settings2, X, Upload, ArrowRight } from 'lucide-react';
 import img1 from './assets/image1.jpg'
 import img2 from './assets/image2.jpg'
 import img3 from './assets/image3.jpg'
@@ -153,93 +153,81 @@ function App() {
   const handleCascadingFlip = (direction: 'right' | 'left', startPoint: 'right' | 'left') => {
     if (isFlipping) return;
     setIsFlipping(true);
-  
-    // 1. First slide new media in from left
+
+    // 1. Trigger a temporary state for left panel animation
+    const newFlipDirection = direction === 'left' ? 'right' : 'left';
+
+    // Use first tile to manage the left panel animation state
     setPositions((prev) => {
       const updated = [...prev];
       updated[0] = {
         ...updated[0],
-        flipDirection: 'left',
+        flipDirection: newFlipDirection,
       };
       return updated;
     });
-  
-    // Wait for slide-in animation to complete
-    const slideInDuration = 600;
-  
+
+    // Wait for left panel animation to complete before tile flips
+    const leftPanelDuration = 600;
+
     setTimeout(() => {
-      // 2. Then slide current media out to right
-      setPositions((prev) => {
-        const updated = [...prev];
-        updated[0] = {
-          ...updated[0],
-          flipDirection: 'right',
-        };
-        return updated;
+      const cellsByCol: number[][] = Array(cols).fill(0).map(() => []);
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          const index = r * cols + c;
+          cellsByCol[c].push(index);
+        }
+      }
+
+      let sequence: number[] = [];
+
+      if (startPoint === 'right') {
+        for (let c = 0; c < cols; c++) {
+          sequence = [...sequence, ...cellsByCol[c]];
+        }
+      } else {
+        for (let c = cols - 1; c >= 0; c--) {
+          sequence = [...sequence, ...cellsByCol[c]];
+        }
+      }
+
+      const totalTiles = sequence.length;
+      const totalDuration = 500;
+      const delayBetweenTiles = totalTiles <= 1 ? 0 : totalDuration / (totalTiles - 1);
+
+      const flipTile = (index: number, delay: number) => {
+        setTimeout(() => {
+          setPositions(currentPositions => {
+            const updatedPositions = [...currentPositions];
+            const currentLayer = updatedPositions[index].activeLayer;
+            const nextLayer = direction === 'left'
+              ? (currentLayer + 1) % numLayers
+              : (currentLayer - 1 + numLayers) % numLayers;
+
+            updatedPositions[index] = {
+              activeLayer: nextLayer,
+              transitionDelay: 0,
+              backgroundPosition: getOriginalPosition(index),
+              flipDirection: newFlipDirection,
+            };
+
+            return updatedPositions;
+          });
+
+          if (index === sequence[sequence.length - 1]) {
+            setTimeout(() => setIsFlipping(false), 600);
+          }
+        }, delay);
+      };
+
+      sequence.forEach((index, position) => {
+        flipTile(index, position * delayBetweenTiles);
       });
-  
-      // Wait for slide-out animation to complete before tile flips
-      const slideOutDuration = 600;
-  
-      setTimeout(() => {
-        const cellsByCol: number[][] = Array(cols).fill(0).map(() => []);
-  
-        for (let r = 0; r < rows; r++) {
-          for (let c = 0; c < cols; c++) {
-            const index = r * cols + c;
-            cellsByCol[c].push(index);
-          }
-        }
-  
-        let sequence: number[] = [];
-  
-        if (startPoint === 'right') {
-          for (let c = 0; c < cols; c++) {
-            sequence = [...sequence, ...cellsByCol[c]];
-          }
-        } else {
-          for (let c = cols - 1; c >= 0; c--) {
-            sequence = [...sequence, ...cellsByCol[c]];
-          }
-        }
-  
-        const totalTiles = sequence.length;
-        const totalDuration = 500;
-        const delayBetweenTiles = totalTiles <= 1 ? 0 : totalDuration / (totalTiles - 1);
-  
-        const flipTile = (index: number, delay: number) => {
-          setTimeout(() => {
-            setPositions(currentPositions => {
-              const updatedPositions = [...currentPositions];
-              const currentLayer = updatedPositions[index].activeLayer;
-              const nextLayer = direction === 'left'
-                ? (currentLayer + 1) % numLayers
-                : (currentLayer - 1 + numLayers) % numLayers;
-  
-              updatedPositions[index] = {
-                activeLayer: nextLayer,
-                transitionDelay: 0,
-                backgroundPosition: getOriginalPosition(index),
-                flipDirection: 'left',
-              };
-  
-              return updatedPositions;
-            });
-  
-            if (index === sequence[sequence.length - 1]) {
-              setTimeout(() => setIsFlipping(false), 600);
-            }
-          }, delay);
-        };
-  
-        sequence.forEach((index, position) => {
-          flipTile(index, position * delayBetweenTiles);
-        });
-  
-      }, slideOutDuration);
-    }, slideInDuration);
+
+    }, leftPanelDuration);
   };
-  
+
 
   useEffect(() => {
     document.documentElement.style.setProperty('--float-scale', floatScale.toString());
@@ -249,47 +237,48 @@ function App() {
   }, []);
 
   return (
-    <div className="relative w-screen h-screen bg-gray-900 overflow-hidden flex md:flex-row flex-col">
+    <div className="relative w-screen h-screen bg-gray-900 overflow-hidden flex flex-col-reverse md:flex-row">
       <div className="md:w-1/2 w-full md:h-full h-1/2 bg-gray-900 relative overflow-hidden">
-      <div className="absolute inset-0 z-10 flex flex-col items-start justify-center p-6">
-              <h2 className="text-white text-4xl font-bold drop-shadow-lg mb-4 font-space-grotesk">
-              {mediaSlots[positions[0]?.activeLayer]?.a.header}
-              </h2>
-              <div className="flex gap-2">
-                <button
-                  style={{
-                    width: '184.645px',
-                    height: '63.828px',
-                    top: '605.17px',
-                    left: '99px',
-                    borderWidth: '1px',
-                    padding: '27.35px',
-                    gap: '9.12px',
-                    backgroundColor: 'white',
-                    color: 'black',
-                    fontFamily: 'Space Mono, monospace',
-                    fontWeight: 400,
-                    fontSize: '14px',
-                    lineHeight: '100%',
-                    letterSpacing: '1.14px',
-                    textAlign: 'center',
-                  }}
-                  className="rounded border border-black"
-                  onClick={() => alert('GET TICKETS clicked!')}
-                >
-                  GET TICKETS
-                </button>
+        <div className="absolute inset-0 z-10 flex flex-col items-start justify-center p-6">
+          <h2 className="text-white text-4xl font-bold drop-shadow-lg mb-4 font-space-grotesk">
+            {mediaSlots[positions[0]?.activeLayer]?.a.header}
+          </h2>
+          <div className="flex gap-2">
+            <button
+              style={{
+                width: '184.645px',
+                height: '63.828px',
+                top: '605.17px',
+                left: '99px',
+                borderWidth: '1px',
+                padding: '27.35px',
+                gap: '9.12px',
+                backgroundColor: 'white',
+                color: 'black',
+                fontFamily: 'Space Mono, monospace',
+                fontWeight: 400,
+                fontSize: '14px',
+                lineHeight: '100%',
+                letterSpacing: '1.14px',
+                textAlign: 'center',
+              }}
+              className="rounded border border-black"
+              onClick={() => alert('GET TICKETS clicked!')}
+            >
+              GET TICKETS
+            </button>
 
-                <button
-                  onClick={() => handleCascadingFlip('right', 'right')}
-                  className="p-5 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
-                  aria-label="Flip right"
-                  disabled={isFlipping}
-                >
-                  <ChevronRight className="w-6 h-6 text-white" />
-                </button>
-              </div>
-            </div>
+            <button
+              onClick={() => handleCascadingFlip('right', 'right')}
+              className="p-5 rounded-full border border-black bg-transparent hover:bg-white transition-colors"
+              aria-label="Flip right"
+              disabled={isFlipping}
+            >
+              <ArrowRight className="w-5 h-5 text-black" />
+            </button>
+
+          </div>
+        </div>
         {Array(numLayers).fill(0).map((_, layerIndex) => (
           <div
             key={`fullscreen-${layerIndex}`}
@@ -306,7 +295,7 @@ function App() {
                   : 'opacity-0'
               }`}
           >
-           
+
             {mediaSlots[layerIndex]?.a.type === 'video' ? (
               <video
                 ref={el => fullscreenVideoRefs.current[layerIndex] = el}
